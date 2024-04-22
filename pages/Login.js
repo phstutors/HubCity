@@ -7,7 +7,7 @@ const Login = ({ navigation }) => {
   const [error, setError] = useState('');
 
   const handleLogin = () => {
-    // Aqui você poderia adicionar a lógica de autenticação com um servidor
+ //Login local apenas como demonstração ;)
     if (username === 'admin' && password === 'admin') {
       navigation.navigate('Home');
     } else {

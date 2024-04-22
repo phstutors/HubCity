@@ -10,15 +10,18 @@ const Home = () => {
   const [filteredCities, setFilteredCities] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [selectedCity, setSelectedCity] = useState(null); // Estado para controlar a cidade selecionada
-  const [modalVisible, setModalVisible] = useState(false); // Estado para controlar a visibilidade do modal
+  const [selectedCity, setSelectedCity] = useState(null); 
+  const [modalVisible, setModalVisible] = useState(false); 
   const [cityImage, setCityImage] = useState(null);
   const [mayorName, setMayorName] = useState('');
-const [historyCity, setHistoryCity] = useState('');
+  const [historyCity, setHistoryCity] = useState('');
+  const [gentilico, setGentilico] = useState('')
+
   useEffect(() => {
     if (selectedCity) {
       fetchCityImage(selectedCity.municipio.id);
-      fetchMayorName(selectedCity.municipio.id);
+      fetchCityInfo(selectedCity.municipio.id);
+      fetchCityHistory(selectedCity.municipio.id);
     }
   }, [selectedCity]);
 
@@ -28,7 +31,7 @@ const [historyCity, setHistoryCity] = useState('');
         const response = await axios.get(`${API_URL}&page=${page}`);
         setCities(response.data);
       } catch (error) {
-        console.error('Error fetching cities:', error);
+        console.error(error);
       }
     };
 
@@ -58,7 +61,7 @@ const [historyCity, setHistoryCity] = useState('');
   const handleCityPress = async  (city) => {
     await setSelectedCity(city);
     setModalVisible(true); 
-    fetchCityHistory(city.id);
+
     }
   const fetchCityImage = async (cityId) => {
     try {
@@ -68,37 +71,47 @@ const [historyCity, setHistoryCity] = useState('');
       const image = `https://servicodados.ibge.gov.br/api/v1/resize/image?maxwidth=600&maxheight=600&caminho=biblioteca.ibge.gov.br/visualizacao/fotografias/GEBIS%20-%20RJ/${firstObject.LINK}`
       setCityImage(image)
     } catch (error) {
+      console.error(error);
     }
   };
   const fetchCityHistory = async (cityId) => {
     try {
-      const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/localidades/distritos/${cityId}`);
-      const history = response.data.historico; // Obtendo o histórico do distrito
-      console.log(history); // Fazendo algo com o histórico, como imprimir no console
-      setHistoryCity(history)
+      const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/biblioteca?aspas=3&codmun=${cityId}`);
+      const fullHistory = response.data[cityId].HISTORICO; 
+      const gentilico =  response.data[cityId].GENTILICO;
+      const startIndex = fullHistory.indexOf("Histórico") + "Histórico".length + 1; 
+      const endIndex = fullHistory.indexOf("Formação Administrativa"); 
+      const history = fullHistory.substring(startIndex, endIndex); 
+      setHistoryCity(history);
+      setGentilico(gentilico)
     } catch (error) {
-      console.error('Error fetching city history:', error);
+      console.error(error);
     }
   };
-  const fetchMayorName = async (cityId) => {
+  
+
+
+  const fetchCityInfo = async (cityId) => {
     try {
-        const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/pesquisas/indicadores/29170%7C97907%7C97911/resultados/${cityId}`);
-        const data = response.data;
-        let mayorName = '';
-        data.forEach((item) => {
-          item.res.forEach((resItem) => {
-            if (resItem.res['2021']) {
-              mayorName = resItem.res['2021'];
-            }
-          });
+      const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/pesquisas/indicadores/29170%7C97907%7C97911/resultados/${cityId}`);
+      const data = response.data;
+      let mayorName = '';
+  
+      data.forEach((item) => {
+        item.res.forEach((resItem) => {
+          if (resItem.res['2021']) {
+            mayorName = resItem.res['2021'];
+          }
+        });
       });
-    setMayorName(mayorName);
+      setMayorName(mayorName);
     } catch (error) {
-      console.error('Error fetching mayor name:', error);
+      console.error(error);
     }
   };
+  
   const renderCity = ({ item }) => (
-    // Adicionando um TouchableOpacity para lidar com o clique em uma cidade
+ 
     <TouchableOpacity onPress={() => handleCityPress(item)} style={styles.containerCityCard}>
       <View style={styles.cards}>
       <Text style={styles.containerCityCardText}>Nome: {item.municipio.nome} UF: {item.municipio.microrregiao.mesorregiao.UF.sigla}</Text>
@@ -140,28 +153,39 @@ const [historyCity, setHistoryCity] = useState('');
     style={styles.modal}
   >
     <View style={styles.modalContainer}>
-      {selectedCity && ( // Verifica se selectedCity não é nulo
+      {selectedCity && ( 
         <View>
-          <Text style={styles.cityName}>{selectedCity.municipio.nome}</Text>
-          <Text style={styles.cityInfo}>ID: {selectedCity.id}</Text>
-          <Text style={styles.cityInfo}>Nome: {selectedCity.nome}</Text>
-          <Text style={styles.cityInfo}>Município: {selectedCity.municipio.historico}</Text>
-          <Text style={styles.cityInfo}>Prefeito: {mayorName}</Text>
-          <Text style={styles.cityInfo}>Prefeito: {historyCity}</Text>
-          <Text style={styles.cityInfo}>Microrregião: {selectedCity.municipio?.microrregiao?.nome}</Text>
-          <Text style={styles.cityInfo}>Mesorregião: {selectedCity.municipio?.microrregiao?.mesorregiao?.nome}</Text>
-          <Text style={styles.cityInfo}>UF: {selectedCity.municipio?.microrregiao?.mesorregiao?.UF?.nome}</Text>
-          <Text style={styles.cityInfo}>Região: {selectedCity.municipio?.microrregiao?.mesorregiao?.UF?.regiao?.nome}</Text>
-          {cityImage !== null ? (
-  <Image source={{ uri: cityImage }} style={{ width: 300, height: 300 }} />
-) : (
-  <Text style={{ color: '#fff' }}>Imagem não disponível</Text>
-)}
+
+          <View style={styles.modalTop}>
+      
+              <Text style={styles.topText}>DETALHES</Text>
+          </View>
+          
+
+          <View style={styles.modalMiddle}>
+                {cityImage !== null ? (
+                  <Image source={{ uri: cityImage }} style={{ width: 300, height: 300 }} />
+                ) : (
+                  <Text style={{ color: '#fff' }}>Imagem não disponível</Text>
+                )}
+              <Text style={styles.cityInfo}>Prefeito: {mayorName}</Text>
+              <Text style={styles.cityInfo}>Cidade: {selectedCity.municipio.nome} Região: {selectedCity.municipio?.microrregiao?.mesorregiao?.UF?.regiao?.nome} Gentilico: {gentilico}</Text>
+          </View>
+                  
+          <View style={styles.modalBottom}>
+                  <Text style={styles.bottomTitle}>Histórico</Text>
+
+                  <Text style={styles.cityInfo}>{historyCity}</Text>
+          </View>  
+
+
           <Button title="Fechar" onPress={() => {
   setModalVisible(false);
   setCityImage(null);
+  setHistoryCity(null);
+  setMayorName(null)
 }} />
-        </View>
+   </View>
       )}
     </View>
   </Modal>
@@ -176,6 +200,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#18163D',
   },
 
+  modalMiddle:{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
   searchInput: {
     height: 40,
     backgroundColor: '#2A276B',
@@ -185,6 +215,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     color: '#fff'
 
+  },
+  modalTop:{
+    textAlign: 'center'
+  },
+  bottomTitle:{
+    color: '#F4A460',
+    fontWeight: 'bold',
+    fontFamily: 'Segoe UI',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    fontSize: '32px',
+    marginTop: '8px'
+  },
+  topText:{
+    color: '#F4A460',
+    fontWeight: 'bold',
+    fontFamily: 'Segoe UI',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    fontSize: '32px',
+    marginTop: '8px'
   },
   containerCityCard:{
     backgroundColor: '#2A276B',
@@ -211,12 +262,11 @@ const styles = StyleSheet.create({
   },
   modalContainer:{
     flex:1,
-    backgroundColor: '#2A276B'
+    backgroundColor: '#2A276B',
+    display: 'flex',
   },
   modal:{
-    display: 'flex',
-    alignContent: 'center',
-    justifyContent: 'center',
+
   } ,
   pagination: {
     flexDirection: 'row',
