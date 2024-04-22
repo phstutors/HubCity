@@ -10,7 +10,7 @@ git clone git@github.com:phstutors/HubCity.git
 ```
 * HTTPS
 ```
-git clone https://github.com/jadeilsonm/HubCity.git
+git clone https://github.com/phstutors/HubCity.git
 ```
 #📋 Pré-requisitos
 
