@@ -24,7 +24,7 @@ git clone https://github.com/jadeilsonm/HubCity.git
 
 Entre no diretorio onde foi clonado o projeto e entre dentro do projeto:
 ```sh
-cd infoCity
+cd HubCity
 ```
 Instale as dependencias do projetos:
 ```sh
